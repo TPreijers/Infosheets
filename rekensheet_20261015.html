@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Rekensheets Apotheek Erasmus MC</title>
+  
+  <!-- Tailwind CSS voor de styling -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- FontAwesome voor de iconen (vervanging voor de vorige Lucide iconen) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- React & ReactDOM (Productie versies) -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  
+  <!-- Babel (Om de React JSX code direct in de browser te kunnen lezen) -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    /* Een paar kleine styling tweaks voor een mooie scrollbar */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: #f1f1f1; }
+    ::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+  </style>
+</head>
+<body class="bg-gray-100 text-gray-900">
+
+  <!-- Hierin wordt de React App geladen -->
+  <div id="root"></div>
+
+  <!-- De logica van de applicatie -->
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    // --- DATA ---
+    const foscarnetTherapie = [
+      { "Creatinineklaring": "(ml/kg/min.)", "CMV-viremie (HST)": "Regime voor 60 mg/kg", "CMV-ziekte (HST) en CMV-retinitis (AIDS)": "Regime voor 60 mg/kg", "CMV-ziekte (HST), CMV-retinitis (AIDS) en CMV in MDK": "Regime voor 90 mg/kg", "HSV-infectie": "Regime voor 40 mg/kg" },
+      { "Creatinineklaring": ">1.4", "CMV-viremie (HST)": "2dd 60 mg/kg", "CMV-ziekte (HST) en CMV-retinitis (AIDS)": "3dd 60 mg/kg", "CMV-ziekte (HST), CMV-retinitis (AIDS) en CMV in MDK": "2dd 90 mg/kg", "HSV-infectie": "3dd 40 mg/kg" },
+      { "Creatinineklaring": ">1.0 tot 1.4", "CMV-viremie (HST)": "2dd 45 mg/kg", "CMV-ziekte (HST) en CMV-retinitis (AIDS)": "3dd 45 mg/kg", "CMV-ziekte (HST), CMV-retinitis (AIDS) en CMV in MDK": "2dd 70 mg/kg", "HSV-infectie": "3dd 30 mg/kg" },
+      { "Creatinineklaring": ">0.8 tot 1.0", "CMV-viremie (HST)": "2dd 35 mg/kg", "CMV-ziekte (HST) en CMV-retinitis (AIDS)": "3dd 35 mg/kg", "CMV-ziekte (HST), CMV-retinitis (AIDS) en CMV in MDK": "2dd 50 mg/kg", "HSV-infectie": "3dd 20 mg/kg" },
+      { "Creatinineklaring": ">0.6 tot 0.8", "CMV-viremie (HST)": "2dd 25 mg/kg", "CMV-ziekte (HST) en CMV-retinitis (AIDS)": "2dd 40 mg/kg", "CMV-ziekte (HST), CMV-retinitis (AIDS) en CMV in MDK": "1dd 80 mg/kg", "HSV-infectie": "2dd 25 mg/kg" },
+      { "Creatinineklaring": ">0.5 tot 0.6", "CMV-viremie (HST)": "2dd 20 mg/kg", "CMV-ziekte (HST) en CMV-retinitis (AIDS)": "2dd 30 mg/kg", "CMV-ziekte (HST), CMV-retinitis (AIDS) en CMV in MDK": "1dd 60 mg/kg", "HSV-infectie": "2dd 20 mg/kg" },
+      { "Creatinineklaring": ">0.4 tot 0.5", "CMV-viremie (HST)": "2dd 15 mg/kg", "CMV-ziekte (HST) en CMV-retinitis (AIDS)": "2dd 25 mg/kg", "CMV-ziekte (HST), CMV-retinitis (AIDS) en CMV in MDK": "1dd 50 mg/kg", "HSV-infectie": "2dd 15 mg/kg" },
+      { "Creatinineklaring": "<0.4", "CMV-viremie (HST)": "Behandeling wordt niet aanbevolen", "CMV-ziekte (HST) en CMV-retinitis (AIDS)": "Behandeling wordt niet aanbevolen", "CMV-ziekte (HST), CMV-retinitis (AIDS) en CMV in MDK": "Behandeling wordt niet aanbevolen", "HSV-infectie": "Behandeling wordt niet aanbevolen" }
+    ];
+
+    const foscarnetOnderhoud = [
+      { "Creatinineklaring": "(ml/kg/min.)", "CMV-viremie (HST)": "", "CMV-ziekte (HST) en CMV-retinitis (AIDS)": "" },
+      { "Creatinineklaring": ">1.4", "CMV-viremie (HST)": "1dd 90 mg/kg", "CMV-ziekte (HST) en CMV-retinitis (AIDS)": "1dd 120 mg/kg" },
+      { "Creatinineklaring": ">1.0 tot 1.4", "CMV-viremie (HST)": "1dd 70 mg/kg", "CMV-ziekte (HST) en CMV-retinitis (AIDS)": "1dd 90 mg/kg" },
+      { "Creatinineklaring": ">0.8 tot 1.0", "CMV-viremie (HST)": "1dd 50 mg/kg", "CMV-ziekte (HST) en CMV-retinitis (AIDS)": "1dd 65 mg/kg" },
+      { "Creatinineklaring": ">0.6 tot 0.8", "CMV-viremie (HST)": "om de dag 80 mg/kg", "CMV-ziekte (HST) en CMV-retinitis (AIDS)": "om de dag 105 mg/kg" },
+      { "Creatinineklaring": ">0.5 tot 0.6", "CMV-viremie (HST)": "om de dag 60 mg/kg", "CMV-ziekte (HST) en CMV-retinitis (AIDS)": "om de dag 80 mg/kg" },
+      { "Creatinineklaring": ">0.4 tot 0.5", "CMV-viremie (HST)": "om de dag 50 mg/kg", "CMV-ziekte (HST) en CMV-retinitis (AIDS)": "om de dag 65 mg/kg" },
+      { "Creatinineklaring": "<0.4", "CMV-viremie (HST)": "Behandeling wordt niet aanbevolen", "CMV-ziekte (HST) en CMV-retinitis (AIDS)": "Behandeling wordt niet aanbevolen" }
+    ];
+
+    // --- HELPER FUNCTIONS ---
+    const getAge = (dateString) => {
+      if (!dateString) return null;
+      const today = new Date();
+      const birthDate = new Date(dateString);
+      const age = (today - birthDate) / (1000 * 60 * 60 * 24 * 365.25);
+      return Math.round(age * 10) / 10;
+    };
+
+    const dateDiff2 = (startingDate, endingDate) => {
+      if (!startingDate || !endingDate) return { error: true, message: "Vul beide data in." };
+      
+      let startDate = new Date(startingDate);
+      let endDate = new Date(endingDate);
+
+      if (startDate.getTime() > endDate.getTime()) {
+        return { error: true, message: "Geboortedatum is later dan de creatininedatum!" };
+      }
+
+      const startYear = startDate.getFullYear();
+      const february = (startYear % 4 === 0 && startYear % 100 !== 0) || startYear % 400 === 0 ? 29 : 28;
+      const daysInMonth = [31, february, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+
+      let yearDiff = endDate.getFullYear() - startYear;
+      let monthDiff = endDate.getMonth() - startDate.getMonth();
+
+      if (monthDiff < 0) {
+        yearDiff--;
+        monthDiff += 12;
+      }
+
+      let dayDiff = endDate.getDate() - startDate.getDate();
+      if (dayDiff < 0) {
+        if (monthDiff > 0) {
+          monthDiff--;
+        } else {
+          yearDiff--;
+          monthDiff = 11;
+        }
+        dayDiff += daysInMonth[startDate.getMonth()];
+      }
+
+      let wkNum = 0;
+      let wk = "0 weken";
+      if (dayDiff >= 28) { wk = "4 weken"; wkNum = 4; dayDiff -= 28; }
+      else if (dayDiff >= 21) { wk = "3 weken"; wkNum = 3; dayDiff -= 21; }
+      else if (dayDiff >= 14) { wk = "2 weken"; wkNum = 2; dayDiff -= 14; }
+      else if (dayDiff >= 7) { wk = "1 week"; wkNum = 1; dayDiff -= 7; }
+
+      const mn = monthDiff !== 1 ? " maanden" : " maand";
+      const dg = dayDiff !== 1 ? " dagen" : " dag";
+
+      let text2 = "";
+      if (yearDiff !== 0) text2 += yearDiff + ' jaar, ';
+      if (yearDiff !== 0 && (monthDiff !== 0 || wkNum !== 0 || dayDiff !== 0)) text2 += " en ";
+      if (monthDiff !== 0) text2 += monthDiff + mn;
+      if (monthDiff !== 0 && (wkNum !== 0 || dayDiff !== 0)) text2 += " en ";
+      if (wkNum !== 0) text2 += wk;
+      if (wkNum !== 0 && dayDiff !== 0) text2 += " en ";
+      if (dayDiff !== 0) text2 += dayDiff + dg;
+
+      return { error: false, text2, yearDiff, monthDiff, dayDiff, wkNum };
+    };
+
+    const retrieveCreat = (arr) => {
+      const [yr, mn, dy, wk] = arr;
+      let creatPred = '';
+      let creatGrp = '';
+      let creatY = '';
+
+      if (yr >= 1) {
+        creatPred = "Leeftijd > 1 jaar, gebruik Schwartz formule!";
+        creatY = 1;
+      } else {
+        creatY = 0;
+        if (mn < 1 && wk === 0 && dy === 1) { creatPred = 55; creatGrp = 1; }
+        else if (mn < 1 && wk === 0 && dy === 2) { creatPred = 47; creatGrp = 2; }
+        else if (mn < 1 && wk === 0 && dy === 3) { creatPred = 42; creatGrp = 3; }
+        else if (mn < 1 && wk === 0 && dy === 4) { creatPred = 39; creatGrp = 4; }
+        else if (mn < 1 && wk === 0 && dy === 5) { creatPred = 37; creatGrp = 5; }
+        else if (mn < 1 && wk === 0 && dy === 6) { creatPred = 36; creatGrp = 6; }
+        else if (mn < 1 && wk === 1 && dy === 0) { creatPred = 34; creatGrp = 7; }
+        else if (mn < 1 && wk === 1 && dy > 0) { creatPred = 31; creatGrp = 8; }
+        else if (mn < 1 && wk === 2 && dy > 0) { creatPred = 28; creatGrp = 9; }
+        else if (mn < 1 && wk === 3 && dy > 0) { creatPred = 25; creatGrp = 10; }
+        else if (mn < 1 && wk === 4 && dy >= 0) { creatPred = 25; creatGrp = 10; }
+        else if (mn === 1) { creatPred = 22; creatGrp = 11; }
+        else if (mn === 2) { creatPred = 20; creatGrp = 12; }
+        else if (mn >= 3 && mn <= 5) { creatPred = 20; creatGrp = 13; }
+        else if (mn >= 6 && mn <= 8) { creatPred = 20; creatGrp = 14; }
+        else if (mn >= 9) { creatPred = 21; creatGrp = 15; }
+      }
+      return [creatPred, creatGrp, creatY];
+    };
+
+    const copyToClipboardFallback = (text, setCopied) => {
+      const textArea = document.createElement("textarea");
+      textArea.value = text;
+      document.body.appendChild(textArea);
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } catch (err) {
+        console.error('Fallback: Oops, unable to copy', err);
+      }
+      document.body.removeChild(textArea);
+    };
+
+    // --- COMPONENTS ---
+
+    const CopyArea = ({ text }) => {
+      const [copied, setCopied] = useState(false);
+      if (!text) return null;
+      return (
+        <div className="mt-6 bg-blue-50 border border-blue-100 rounded-lg p-4 relative">
+          <h4 className="text-sm font-semibold text-blue-900 mb-2">Tekst voor in ICR:</h4>
+          <p className="text-gray-800 text-sm whitespace-pre-wrap pr-12">{text}</p>
+          <button 
+            onClick={() => copyToClipboardFallback(text, setCopied)}
+            className="absolute top-4 right-4 p-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+            title="Kopieer tekst"
+          >
+            {copied ? <i className="fas fa-check"></i> : <i className="far fa-copy"></i>}
+          </button>
+        </div>
+      );
+    };
+
+    const EgfrInfantTool = () => {
+      const [dob, setDob] = useState("");
+      const [creatDate, setCreatDate] = useState(new Date().toISOString().split('T')[0]);
+      const [creatConc, setCreatConc] = useState("");
+      const [result, setResult] = useState(null);
+
+      useEffect(() => {
+        if (dob && creatDate && creatConc) {
+          const diff = dateDiff2(dob, creatDate);
+          if (diff.error) {
+            setResult({ error: diff.message });
+          } else {
+            const creatInfo = retrieveCreat([diff.yearDiff, diff.monthDiff, diff.dayDiff, diff.wkNum]);
+            if (creatInfo[2] === 1) {
+              setResult({ error: creatInfo[0] });
+            } else {
+              const percGFR = (creatInfo[0] / creatConc) * 100;
+              const percGFRround = Math.round(percGFR * 10) / 10;
+              
+              const today = new Date();
+              const formattedToday = `${String(today.getDate()).padStart(2, '0')}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+              const textOutput = `${formattedToday}: bij een leeftijd van ${diff.text2} en een gemeten creatinineconcentratie van ${creatConc} µmol/L is de geschatte nierfunctie ${percGFRround} mL/min. volgens tabel 3 uit Boer et al. (2010).`;
+
+              setResult({
+                ageStr: diff.text2,
+                estCreat: creatInfo[0],
+                ageGroup: creatInfo[1],
+                percGFR: percGFRround,
+                textOutput
+              });
+            }
+          }
+        } else {
+          setResult(null);
+        }
+      }, [dob, creatDate, creatConc]);
+
+      return (
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+          <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+            <i className="fas fa-calculator mr-3 text-blue-600"></i> eGFR &lt;1 jaar
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Geboortedatum</label>
+                <input type="date" value={dob} onChange={e => setDob(e.target.value)} className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Datum creatininespiegel</label>
+                <input type="date" value={creatDate} onChange={e => setCreatDate(e.target.value)} className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Creatininespiegel (µmol/L)</label>
+                <input type="number" min="1" value={creatConc} onChange={e => setCreatConc(e.target.value)} className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" />
+              </div>
+            </div>
+
+            <div className="bg-gray-50 p-6 rounded-lg border border-gray-200 flex flex-col justify-center">
+              {!result ? (
+                <p className="text-gray-500 text-center">Vul de gegevens in om de eGFR te berekenen.</p>
+              ) : result.error ? (
+                <div className="flex items-center text-red-600"><i className="fas fa-exclamation-circle mr-2"></i> {result.error}</div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="flex justify-between border-b pb-2"><span className="text-gray-600">Leeftijd:</span> <span className="font-medium">{result.ageStr}</span></div>
+                  <div className="flex justify-between border-b pb-2"><span className="text-gray-600">Geschatte creatinespiegel:</span> <span className="font-medium">{result.estCreat} µmol/L</span></div>
+                  <div className="flex justify-between border-b pb-2"><span className="text-gray-600">Leeftijd groep:</span> <span className="font-medium">Rij {result.ageGroup}</span></div>
+                  <div className="flex justify-between border-b pb-2"><span className="text-gray-600">Percentage GFR:</span> <span className="font-bold text-blue-700 bg-blue-100 px-2 py-1 rounded">{result.percGFR} mL/min.</span></div>
+                  <div className="pt-2 text-sm text-gray-500">
+                    Formule: <a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2923720/" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Table 3 uit Pediatr. Nephrol (2010)</a>
+                  </div>
+                  <CopyArea text={result.textOutput} />
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    const SolubilityTool = () => {
+      const [ca, setCa] = useState("");
+      const [mg, setMg] = useState("");
+      const [gp, setGp] = useState("");
+      const [tpv, setTpv] = useState("");
+
+      const calculate = () => {
+        if (!tpv || tpv <= 0) return null;
+        const val_CA = (parseFloat(ca) || 0) * 0.23;
+        const val_MG = (parseFloat(mg) || 0) * 0.40;
+        const val_GP = (parseFloat(gp) || 0) * 1.00;
+        const vol = parseFloat(tpv);
+
+        const oplCaSO4 = (val_CA / vol) * (val_MG / vol); 
+        const oplCaGP = (val_CA / vol) * (val_GP / vol);
+        const oplMgGP = (val_MG / vol) * (val_GP / vol);
+
+        return [
+          { name: "CaSO₄", ionA: "Ca²⁺", ionB: "SO₄²⁻", val: oplCaSO4, limit: 0.00019 },
+          { name: "Ca-glycerofosfaat", ionA: "Ca²⁺", ionB: "P₂O₅²⁻", val: oplCaGP, limit: 0.00125 },
+          { name: "Mg-glycerofosfaat", ionA: "Mg²⁺", ionB: "P₂O₅²⁻", val: oplMgGP, limit: 0.00125 }
+        ];
+      };
+
+      const results = calculate();
+
+      return (
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+          <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+            <i className="fas fa-tint mr-3 text-blue-600"></i> Oplosbaarheidsproduct (TPV)
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Volume Calcium-gluconaat 10% (mL)</label>
+                <span className="text-xs text-gray-500 mb-1 block">Concentratie: 0,23 mmol/mL</span>
+                <input type="number" step="0.01" value={ca} onChange={e => setCa(e.target.value)} className="w-full p-2 border border-gray-300 rounded outline-none focus:ring-2 focus:ring-blue-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Volume Magnesium-sulfaat 10% (mL)</label>
+                <span className="text-xs text-gray-500 mb-1 block">Concentratie: 0,4 mmol/mL</span>
+                <input type="number" step="0.01" value={mg} onChange={e => setMg(e.target.value)} className="w-full p-2 border border-gray-300 rounded outline-none focus:ring-2 focus:ring-blue-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Volume GlycoPhos (mL)</label>
+                <span className="text-xs text-gray-500 mb-1 block">Fosfaat 1 mmol/mL en Natrium 2 mmol/mL</span>
+                <input type="number" step="0.01" value={gp} onChange={e => setGp(e.target.value)} className="w-full p-2 border border-gray-300 rounded outline-none focus:ring-2 focus:ring-blue-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-900">Totaal volume TPV (mL)</label>
+                <input type="number" step="0.01" value={tpv} onChange={e => setTpv(e.target.value)} className="w-full p-2 border border-gray-400 rounded outline-none focus:ring-2 focus:ring-blue-500 font-bold" />
+              </div>
+            </div>
+
+            <div className="bg-gray-50 p-6 rounded-lg border border-gray-200 overflow-x-auto">
+              {results && tpv > 0 ? (
+                <table className="w-full text-left text-sm">
+                  <thead>
+                    <tr className="border-b-2 border-gray-300 text-gray-700">
+                      <th className="pb-2 font-semibold">Neerslag</th>
+                      <th className="pb-2 font-semibold">Ion A</th>
+                      <th className="pb-2 font-semibold">Ion B</th>
+                      <th className="pb-2 font-semibold text-right">Product</th>
+                      <th className="pb-2 font-semibold text-center">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {results.map((r, i) => {
+                      const isActive = (r.name.includes("Ca") && !ca) || (r.name.includes("Mg") && !mg) || (r.name.includes("fosfaat") && !gp) ? false : true;
+                      if (!isActive) return null;
+                      
+                      const isOk = r.val <= r.limit;
+                      return (
+                        <tr key={i} className="border-b border-gray-200">
+                          <td className="py-3 font-medium text-gray-800">{r.name}</td>
+                          <td className="py-3 text-gray-600">{r.ionA}</td>
+                          <td className="py-3 text-gray-600">{r.ionB}</td>
+                          <td className="py-3 text-right font-mono text-xs">{Number.parseFloat(r.val).toExponential(2)}</td>
+                          <td className="py-3 text-center">
+                            {isOk ? 
+                              <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800"><i className="far fa-check-circle mr-1"></i> Akkoord</span> : 
+                              <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-red-100 text-red-800"><i className="fas fa-exclamation-circle mr-1"></i> Risico</span>
+                            }
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              ) : (
+                 <p className="text-gray-500 text-center mt-10">Vul op zijn minst TPV volume en één toevoeging in.</p>
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    const FoscarnetTool = () => {
+      const [dob, setDob] = useState("");
+      const [creat, setCreat] = useState("");
+      const [gender, setGender] = useState("");
+      const [therapy, setTherapy] = useState("therapie");
+
+      const getEgfrRowSelector = (egfr) => {
+        if (egfr > 1.4) return 1;
+        if (egfr > 1.0 && egfr <= 1.4) return 2;
+        if (egfr > 0.8 && egfr <= 1.0) return 3;
+        if (egfr > 0.6 && egfr <= 0.8) return 4;
+        if (egfr > 0.5 && egfr <= 0.6) return 5;
+        if (egfr > 0.4 && egfr <= 0.5) return 6;
+        return 7; 
+      };
+
+      let activeRow = -1;
+      let egfr = null;
+
+      if (dob && creat && gender) {
+        const age = getAge(dob);
+        const cre_spc = parseFloat(creat) / 88.4;
+        const gen_exp = gender === "man" ? 1 : 0.85;
+        // CrCl in ml/min/kg
+        egfr = Math.round((140 - age) / (72 * cre_spc) * gen_exp * 100) / 100;
+        activeRow = getEgfrRowSelector(egfr);
+      }
+
+      const tableData = therapy === "therapie" ? foscarnetTherapie : foscarnetOnderhoud;
+      const cols = Object.keys(tableData[0]);
+
+      return (
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+          <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+            <i className="fas fa-heartbeat mr-3 text-blue-600"></i> Dosering Foscarnet
+          </h2>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Geboortedatum</label>
+              <input type="date" value={dob} onChange={e => setDob(e.target.value)} className="w-full p-2 border border-gray-300 rounded outline-none focus:ring-2 focus:ring-blue-500" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Creatinine (µmol/L)</label>
+              <input type="number" min="1" value={creat} onChange={e => setCreat(e.target.value)} className="w-full p-2 border border-gray-300 rounded outline-none focus:ring-2 focus:ring-blue-500" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Geslacht</label>
+              <select value={gender} onChange={e => setGender(e.target.value)} className="w-full p-2 border border-gray-300 rounded outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                <option value="" disabled>Selecteer...</option>
+                <option value="man">Man</option>
+                <option value="vrouw">Vrouw</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Behandelwijze</label>
+              <select value={therapy} onChange={e => setTherapy(e.target.value)} className="w-full p-2 border border-gray-300 rounded outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                <option value="therapie">Therapie</option>
+                <option value="onderhoud">Onderhoud</option>
+              </select>
+            </div>
+          </div>
+
+          {egfr !== null && (
+            <div className="mb-6 p-4 bg-blue-50 text-blue-900 border border-blue-200 rounded-lg flex items-center justify-between">
+              <span>Berekende Creatinineklaring: <strong className="text-xl ml-2">{egfr}</strong> ml/kg/min</span>
+            </div>
+          )}
+
+          <div className="overflow-x-auto border border-gray-200 rounded-lg">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-gray-100 border-b border-gray-200">
+                <tr>
+                  {cols.map((col, idx) => (
+                    <th key={idx} className="p-3 font-semibold text-gray-700">{col}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {tableData.map((row, idx) => (
+                  <tr key={idx} className={`border-b border-gray-100 ${idx === activeRow ? 'bg-green-100 border-green-300 shadow-inner' : (idx === 0 ? 'bg-gray-50 text-xs text-gray-500' : 'hover:bg-gray-50')}`}>
+                    {cols.map((col, cIdx) => (
+                      <td key={cIdx} className={`p-3 ${idx === activeRow && cIdx === 0 ? 'font-bold text-green-800' : ''}`}>
+                        {row[col]}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          
+          <div className="mt-8 border-t pt-4">
+            <h4 className="text-sm font-bold text-gray-600 mb-2">Afkortingen</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 text-xs text-gray-500">
+              <div><strong className="text-gray-700">AIDS:</strong> Acquired immunodeficiency syndrome</div>
+              <div><strong className="text-gray-700">CMV:</strong> Cytomegalovirus</div>
+              <div><strong className="text-gray-700">HST:</strong> Hematopoëtische stamceltransplantatie</div>
+              <div><strong className="text-gray-700">HSV:</strong> Herpes simplex virus</div>
+              <div><strong className="text-gray-700">MDK:</strong> Maagdarmkanaal</div>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    const CystatinCTool = () => {
+      const [dob, setDob] = useState("");
+      const [cys, setCys] = useState("");
+      const [result, setResult] = useState(null);
+
+      useEffect(() => {
+        if (dob && cys) {
+          const age = getAge(dob);
+          const cysVal = parseFloat(cys);
+          if (age > 0 && cysVal > 0) {
+            let cys_gfr = 130 * Math.pow(cysVal, -1.069) * Math.pow(age, -0.117) - 7;
+            cys_gfr = Math.round(cys_gfr * 10) / 10;
+            
+            const today = new Date();
+            const formattedToday = `${String(today.getDate()).padStart(2, '0')}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+            const textOutput = `${formattedToday}: bij een leeftijd van ${age} jaar en een gemeten cystatine C concentratie van ${cysVal} mg/L is de geschatte nierfunctie ${cys_gfr} mL/min./1.73m² berekend met de formule uit Grubb et al. (2014).`;
+
+            setResult({ age, cys_gfr, textOutput });
+          } else {
+            setResult(null);
+          }
+        } else {
+          setResult(null);
+        }
+      }, [dob, cys]);
+
+      return (
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+          <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+            <i className="fas fa-calculator mr-3 text-blue-600"></i> eGFR o.b.v. Cystatine C
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Geboortedatum</label>
+                <input type="date" value={dob} onChange={e => setDob(e.target.value)} className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Cystatine C (mg/L)</label>
+                <input type="number" step="0.01" min="0" value={cys} onChange={e => setCys(e.target.value)} className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" />
+              </div>
+            </div>
+
+            <div className="bg-gray-50 p-6 rounded-lg border border-gray-200 flex flex-col justify-center">
+              {!result ? (
+                 <p className="text-gray-500 text-center">Vul de gegevens in om de eGFR te berekenen.</p>
+              ) : (
+                <div className="space-y-3">
+                  <div className="flex justify-between border-b pb-2"><span className="text-gray-600">Leeftijd:</span> <span className="font-medium">{result.age} jaar</span></div>
+                  <div className="flex justify-between border-b pb-2"><span className="text-gray-600">Berekende eGFR:</span> <span className="font-bold text-blue-700 bg-blue-100 px-2 py-1 rounded">{result.cys_gfr} mL/min./1.73m²</span></div>
+                  <div className="pt-2 text-sm text-gray-500">
+                    Formule: <a href="https://academic.oup.com/clinchem/article/60/7/974/5621550" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Clinical Chemistry (2014)</a>
+                  </div>
+                  <CopyArea text={result.textOutput} />
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    const GastricProtectionTool = () => {
+      const [ageGroup, setAgeGroup] = useState("");
+      const [history, setHistory] = useState("");
+      const [primaryMeds, setPrimaryMeds] = useState([]);
+      const [riskMeds, setRiskMeds] = useState([]);
+
+      const primaryOptions = [
+        "NSAID (bijv. ibuprofen, diclofenac, naproxen)",
+        "Salicylaat (bijv. acetylsalicylzuur 80mg, carbasalaatcalcium 100mg)",
+        "COXIB (bijv. celecoxib, etoricoxib)"
+      ];
+
+      const riskOptions = [
+        "Systemisch corticosteroïd (bijv. prednison)",
+        "Antitromboticum (DOAC, VKA, clopidogrel, ticagrelor)",
+        "SSRI, SNRI of Trazodon",
+        "Spironolacton"
+      ];
+
+      const togglePrimary = (med) => {
+        setPrimaryMeds(prev => prev.includes(med) ? prev.filter(m => m !== med) : [...prev, med]);
+      };
+
+      const toggleRisk = (med) => {
+        setRiskMeds(prev => prev.includes(med) ? prev.filter(m => m !== med) : [...prev, med]);
+      };
+
+      // --- LOGIC CALCULATOR ---
+      let advice = null;
+
+      if (ageGroup && history) {
+        const hasPrimary = primaryMeds.length > 0;
+        const riskCount = riskMeds.length;
+
+        if (!hasPrimary) {
+          advice = {
+            status: "success",
+            title: "Geen primaire indicatie",
+            message: "Zonder gebruik van een primair risicomedicijn (NSAID, Salicylaat of COXIB) is profylactische maagbescherming in de regel niet standaard geïndiceerd op basis van deze specifieke criteria."
+          };
+        } else if (history === "Ja") {
+          advice = {
+            status: "warning",
+            title: "Maagbescherming AANBEVOLEN",
+            message: "Patiënt heeft een ulcus pepticum of maagbloeding in de voorgeschiedenis en gebruikt een NSAID/Salicylaat/COXIB. Dit is een strikte indicatie voor het starten van een PPI."
+          };
+        } else if (ageGroup === "≥ 80 jaar") {
+          advice = {
+            status: "warning",
+            title: "Maagbescherming AANBEVOLEN",
+            message: "Patiënt is 80 jaar of ouder en gebruikt een NSAID/Salicylaat/COXIB. Dit is een indicatie voor maagbescherming ongeacht andere risicofactoren."
+          };
+        } else if ((ageGroup === "70 t/m 79 jaar") && riskCount >= 1) {
+          advice = {
+            status: "warning",
+            title: "Maagbescherming AANBEVOLEN",
+            message: `Patiënt is in de leeftijd 70-79 jaar, gebruikt een NSAID/Salicylaat/COXIB én heeft aanvullende risicofactoren (${riskCount}). Maagbescherming geïndiceerd.`
+          };
+        } else if (ageGroup === "60 t/m 69 jaar" && riskCount >= 2) {
+          advice = {
+            status: "warning",
+            title: "Maagbescherming AANBEVOLEN",
+            message: `Patiënt is in de leeftijd 60-69 jaar, gebruikt een NSAID/Salicylaat/COXIB én heeft ≥ 2 aanvullende risicofactoren (${riskCount}). Maagbescherming geïndiceerd.`
+          };
+        } else {
+          advice = {
+            status: "success",
+            title: "Geen harde indicatie",
+            message: "Op basis van de ingevulde gegevens is er volgens de standaardrichtlijn géén harde indicatie voor maagbescherming. Beoordeel altijd de individuele patiëntsituatie (bijv. toevoeging van ernstige comorbiditeit zoals hartfalen, DM of reumatoïde artritis)."
+          };
+        }
+      }
+
+      return (
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+          <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+            <i className="fas fa-clipboard-list mr-3 text-blue-600"></i> Maagbescherming Advies
+          </h2>
+          <div className="space-y-8">
+            
+            {/* Section 1: Primair Medicijn */}
+            <div>
+              <h3 className="text-lg font-semibold text-blue-900 mb-3 border-b pb-2">1. Primair risicomedicijn in gebruik of gestart?</h3>
+              <div className="grid grid-cols-1 gap-3">
+                {primaryOptions.map((med, i) => (
+                  <label key={i} className={`flex items-start p-3 border rounded-lg cursor-pointer transition ${primaryMeds.includes(med) ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:bg-gray-50'}`}>
+                    <input type="checkbox" className="mt-1 mr-3 h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500" 
+                      checked={primaryMeds.includes(med)} onChange={() => togglePrimary(med)} />
+                    <span className="text-sm text-gray-700">{med}</span>
+                  </label>
+                ))}
+              </div>
+              <p className="text-xs text-gray-500 mt-2 flex items-center"><i className="fas fa-info-circle mr-1"></i> Vink niets aan indien de patiënt geen van deze primaire middelen gebruikt.</p>
+            </div>
+
+            {/* Section 2: Leeftijd */}
+            <div>
+              <h3 className="text-lg font-semibold text-blue-900 mb-3 border-b pb-2">2. Wat is de leeftijd van de patiënt?</h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {["< 60 jaar", "60 t/m 69 jaar", "70 t/m 79 jaar", "≥ 80 jaar"].map((age, i) => (
+                   <label key={i} className={`flex justify-center text-center p-3 border rounded-lg cursor-pointer transition ${ageGroup === age ? 'border-blue-500 bg-blue-50 text-blue-700 font-medium shadow-sm' : 'border-gray-200 hover:bg-gray-50 text-gray-600'}`}>
+                     <input type="radio" name="ageGroup" className="hidden" checked={ageGroup === age} onChange={() => setAgeGroup(age)} />
+                     {age}
+                   </label>
+                ))}
+              </div>
+            </div>
+
+             {/* Section 3: Voorgeschiedenis */}
+             <div>
+              <h3 className="text-lg font-semibold text-blue-900 mb-3 border-b pb-2">3. Ulcus pepticum of maagbloeding in de voorgeschiedenis?</h3>
+              <div className="flex gap-4">
+                {["Ja", "Nee", "Onbekend"].map((opt, i) => (
+                   <label key={i} className={`flex-1 text-center p-3 border rounded-lg cursor-pointer transition ${history === opt ? 'border-blue-500 bg-blue-50 text-blue-700 font-medium shadow-sm' : 'border-gray-200 hover:bg-gray-50 text-gray-600'}`}>
+                     <input type="radio" name="history" className="hidden" checked={history === opt} onChange={() => setHistory(opt)} />
+                     {opt}
+                   </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Section 4: Aanvullende risicofactoren */}
+            <div>
+              <h3 className="text-lg font-semibold text-blue-900 mb-3 border-b pb-2">4. Aanvullende risicomedicatie?</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {riskOptions.map((med, i) => (
+                  <label key={i} className={`flex items-start p-3 border rounded-lg cursor-pointer transition ${riskMeds.includes(med) ? 'border-orange-500 bg-orange-50' : 'border-gray-200 hover:bg-gray-50'}`}>
+                    <input type="checkbox" className="mt-1 mr-3 h-4 w-4 text-orange-600 rounded border-gray-300 focus:ring-orange-500" 
+                      checked={riskMeds.includes(med)} onChange={() => toggleRisk(med)} />
+                    <span className="text-sm text-gray-700">{med}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Advice Panel */}
+            <div className={`p-5 rounded-lg border flex flex-col justify-center transition-colors duration-300 ${!advice ? 'bg-gray-50 border-gray-200 text-gray-500' : (advice.status === 'warning' ? 'bg-red-50 border-red-200 text-red-900' : 'bg-green-50 border-green-200 text-green-900')}`}>
+               {!advice ? (
+                 <div className="text-center py-4">Selecteer ten minste een leeftijd en de voorgeschiedenis om een advies te genereren.</div>
+               ) : (
+                 <div className="flex items-start">
+                   <div className="mr-4 mt-1">
+                     {advice.status === 'warning' ? <i className="fas fa-exclamation-circle text-3xl text-red-600"></i> : <i className="far fa-check-circle text-3xl text-green-600"></i>}
+                   </div>
+                   <div>
+                     <h4 className={`text-lg font-bold mb-1 ${advice.status === 'warning' ? 'text-red-700' : 'text-green-700'}`}>{advice.title}</h4>
+                     <p className="text-sm leading-relaxed">{advice.message}</p>
+                   </div>
+                 </div>
+               )}
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    const SourcesTool = () => {
+      const categories = [
+        {
+          title: "Posologie op indicatie",
+          links: [
+            { name: "Doseren bij levercirrose", url: "http://www.geneesmiddelenbijlevercirrose.nl/" },
+            { name: "Doseren bij porfyrie", url: "http://www.drugs-porphyria.org/" }
+          ]
+        },
+        {
+          title: "Interacties",
+          links: [
+            { name: "Interacties kruiden en oncolytica", url: "http://www.tdm-protocollen.nl/meest_recente_protocollen.htm" },
+            { name: "Interacties geneesmiddelen HIV", url: "http://www.hiv-druginteractions.org/" },
+            { name: "CYP450 drug (Flockhart) table", url: "https://drug-interactions.medicine.iu.edu/MainTable.aspx" }
+          ]
+        },
+        {
+          title: "Therapeutic Drug Monitoring (TDM)",
+          links: [
+            { name: "TDM van antiretrovirale middelen", url: "http://www.tdm-protocollen.nl/meest_recente_protocollen.htm" },
+            { name: "TDM monografieën", url: "https://tdm-monografie.org/monografieen/tdm-monografieen/" },
+            { name: "Bepalingen wijzer Erasmus MC", url: "https://erasmusmc.elabgids.nl/bepalingen" }
+          ]
+        },
+        {
+          title: "Medische richtlijnen",
+          links: [
+            { name: "FMS richtlijnen", url: "https://richtlijnendatabase.nl/" },
+            { name: "Ouderen-geneeskunde (EPHOR)", url: "http://www.ephor.nl/" }
+          ]
+        },
+        {
+          title: "Farmacogenetica",
+          links: [
+            { name: "CYP-enzymen (PharmVar)", url: "https://www.pharmvar.org/genes" },
+            { name: "DNA diagnostiek", url: "https://www.dnadiagnostiek.nl/" },
+            { name: "Farmacogenetica Erasmus MC", url: "https://www.erasmusmc.nl/nl-nl/patientenzorg/laboratoriumspecialismen/farmacogenetica" },
+            { name: "Netwerk Klinische Farmacogenetica NL", url: "https://pgx-net.nl/" }
+          ]
+        }
+      ];
+
+      return (
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+          <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+            <i className="fas fa-external-link-alt mr-3 text-blue-600"></i> Bronnen & Naslagwerk
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {categories.map((cat, i) => (
+              <div key={i} className="bg-blue-50/50 p-5 rounded-lg border border-blue-100">
+                <h3 className="font-semibold text-blue-900 mb-3 border-b border-blue-200 pb-2">{cat.title}</h3>
+                <ul className="space-y-2">
+                  {cat.links.map((link, j) => (
+                    <li key={j}>
+                      <a href={link.url} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-700 hover:text-blue-500 hover:underline flex items-center">
+                        <i className="fas fa-chevron-right mr-1 text-sm"></i> {link.name}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    };
+
+    // --- MAIN APP LAYOUT ---
+
+    function App() {
+      const [activeTab, setActiveTab] = useState('sheet1');
+      const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+
+      const tabs = [
+        { id: 'sheet1', label: 'eGFR < 1 jaar', icon: <i className="fas fa-calculator text-lg"></i>, group: 'Locatie Sophia' },
+        { id: 'sheet2', label: 'Oplosbaarheidsproduct', icon: <i className="fas fa-tint text-lg"></i>, group: 'Locatie Sophia' },
+        { id: 'sheet3', label: 'Dosering Foscarnet', icon: <i className="fas fa-heartbeat text-lg"></i>, group: 'Locatie Centrum' },
+        { id: 'sheet5', label: 'eGFR o.b.v. Cystatine C', icon: <i className="fas fa-calculator text-lg"></i>, group: 'Locatie Centrum' },
+        { id: 'sheet6', label: 'Maagbescherming', icon: <i className="fas fa-clipboard-list text-lg"></i>, group: 'Algemeen' },
+        { id: 'sheet4', label: 'Bronnen', icon: <i className="fas fa-book text-lg"></i>, group: 'Algemeen' },
+      ];
+
+      const renderContent = () => {
+        switch(activeTab) {
+          case 'sheet1': return <EgfrInfantTool />;
+          case 'sheet2': return <SolubilityTool />;
+          case 'sheet3': return <FoscarnetTool />;
+          case 'sheet5': return <CystatinCTool />;
+          case 'sheet6': return <GastricProtectionTool />;
+          case 'sheet4': return <SourcesTool />;
+          default: return <EgfrInfantTool />;
+        }
+      };
+
+      const groups = [...new Set(tabs.map(t => t.group))];
+
+      return (
+        <div className="flex h-screen bg-gray-100 font-sans text-gray-900">
+          
+          {/* Sidebar Overlay (Mobile) */}
+          {!isSidebarOpen && (
+             <button onClick={() => setIsSidebarOpen(true)} className="md:hidden fixed bottom-4 right-4 z-50 bg-blue-900 text-white p-3 rounded-full shadow-lg">
+               <i className="fas fa-bars text-2xl"></i>
+             </button>
+          )}
+
+          {/* Sidebar */}
+          <div className={`fixed inset-y-0 left-0 z-40 w-72 bg-[#0c2074] text-white transition-transform duration-300 ease-in-out transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:relative md:translate-x-0 flex flex-col`}>
+            <div className="p-6 flex justify-between items-center bg-[#091754]">
+              <h1 className="text-xl font-bold tracking-wide">Apotheek Erasmus MC</h1>
+              <button onClick={() => setIsSidebarOpen(false)} className="md:hidden text-gray-300 hover:text-white">
+                <i className="fas fa-times text-2xl"></i>
+              </button>
+            </div>
+            
+            <div className="overflow-y-auto flex-1 p-4 space-y-6">
+              {groups.map((group, i) => (
+                <div key={i}>
+                  <h3 className="text-xs font-semibold text-blue-300 uppercase tracking-wider mb-2 pl-3">{group}</h3>
+                  <ul className="space-y-1">
+                    {tabs.filter(t => t.group === group).map(tab => (
+                      <li key={tab.id}>
+                        <button
+                          onClick={() => { setActiveTab(tab.id); if (window.innerWidth < 768) setIsSidebarOpen(false); }}
+                          className={`w-full flex items-center px-3 py-2.5 rounded-lg transition-colors text-sm font-medium ${
+                            activeTab === tab.id 
+                              ? 'bg-blue-600 text-white shadow-md' 
+                              : 'text-blue-100 hover:bg-blue-800/50 hover:text-white'
+                          }`}
+                        >
+                          <span className={`mr-3 w-5 text-center ${activeTab === tab.id ? 'text-white' : 'text-blue-300'}`}>{tab.icon}</span>
+                          {tab.label}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+            
+            <div className="p-4 bg-[#091754] text-xs text-blue-300 text-center">
+              Digitale Rekensheets &copy; {new Date().getFullYear()}
+            </div>
+          </div>
+
+          {/* Main Content Area */}
+          <div className="flex-1 flex flex-col overflow-hidden relative">
+            {/* Header */}
+            <header className="bg-white shadow-sm z-10 p-4 flex justify-between items-center border-b border-gray-200">
+              <div className="flex items-center">
+                <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="mr-4 text-gray-500 hover:text-gray-800 focus:outline-none hidden md:block">
+                  <i className="fas fa-bars text-xl"></i>
+                </button>
+                <h2 className="text-lg font-semibold text-gray-800">
+                  {tabs.find(t => t.id === activeTab)?.label}
+                </h2>
+              </div>
+              <div className="hidden sm:flex items-center text-blue-900 font-bold text-xl tracking-tighter">
+                Erasmus<span className="text-blue-600 font-light ml-1">MC</span>
+              </div>
+            </header>
+
+            {/* Scrollable Content */}
+            <main className="flex-1 overflow-x-hidden overflow-y-auto bg-slate-50 p-4 md:p-8">
+              <div className="max-w-5xl mx-auto">
+                {renderContent()}
+              </div>
+            </main>
+          </div>
+        </div>
+      );
+    }
+
+    // Render de applicatie
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
